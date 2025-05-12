@@ -1,0 +1,18 @@
+{
+    "baseURL": "http://127.0.0.1:8080",
+    "topic":[
+        "亲子",
+        "情侣",
+        "美食",
+        "探险",
+        "文化",
+        "其他"
+    ],
+    "destination":[
+        "上海",
+        "北京",
+        "深圳"
+    ],
+    "countEachLoad":10,
+    "findUserCountEachLoad":50
+}
