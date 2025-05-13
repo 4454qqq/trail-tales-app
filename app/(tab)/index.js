@@ -2,7 +2,7 @@ import { Link } from "expo-router";
 import { useState, useEffect } from "react";
 import WaterfallFlow from 'react-native-waterfall-flow';
 import TravelLogCard from "../../components/TravelLogCard";
-import { useNavigation } from '@react-navigation/native';
+import { router } from "expo-router";
 // import { Dialog } from "@rneui/themed";
 import {
   View,
@@ -50,9 +50,9 @@ export default function Index() {
   const [requestStatus, setRequestStatus] = useState(RequestStatus.IDLE);
 
   // 点击游记卡片执行跳转至详情页
-  const navigation = useNavigation();
+  // const navigation = useNavigation();
   const handlePress = (item) => {
-    navigation.navigate('logDetails', { log: item });
+    router.push({pathname:'logDetails',params: { log: JSON.stringify(item) }});
   };
 
   // 分中英文计算字符长度，用于判断搜索框内容长度是否合法

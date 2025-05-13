@@ -2,10 +2,9 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { MaterialIcons } from "@expo/vector-icons";
 import { api, storeDataToAS } from '../utiles/utile';
-import { useNavigation } from "@react-navigation/native";
+import { router } from "expo-router";
 
 const LoginScreen = () => {
-    const navigation = useNavigation();
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState('');
     const [errorMessage, setErrorMessage] = useState("");
@@ -49,7 +48,7 @@ const LoginScreen = () => {
                         "userInfo",
                         JSON.stringify(res.data.data.userInfo)
                     );
-                    navigation.navigate("(tab)");
+                    router.push('(tab)')
                 })
                 .catch((err) => {
                     console.log(err);

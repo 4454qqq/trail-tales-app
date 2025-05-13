@@ -2,9 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { api, storeDataToAS } from '../utiles/utile';
-import { useNavigation } from "@react-navigation/native";
+import { router } from "expo-router";
 export default function Register() {
-    const navigation = useNavigation();
     const [username, setUsername] = useState();
     const [password, setPassword] = useState();
     const [confirmPassword, setConfirmPassword] = useState();
@@ -38,7 +37,7 @@ export default function Register() {
                 .then((res) => {
                     console.log("提交成功:", res.data.message);
                     // 提交成功后跳转到登录页面
-                    navigation.navigate("login");
+                    router.push("login");
                 })
                 .catch((err) => {
                     console.log("提交失败:", err.response.data.message);
