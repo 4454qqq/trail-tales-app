@@ -5,6 +5,13 @@ import {
   TouchableOpacity,
 } from "react-native";
 
+import {
+  Icon,
+  Divider,
+  ListItem,
+
+} from "@rneui/themed";
+
 //侧边菜单栏
 const ContentView = ({ onCloseDrawer }) => {
   const navigation = useNavigation();
