@@ -3,18 +3,28 @@ import {
   Dimensions, Alert, TouchableOpacity, ImageBackground,
   ToastAndroid
 } from "react-native";
-import { Link, router } from "expo-router";
+import { router } from "expo-router";
 import { api, getItemFromAS, setAuthHeader, removeValueFromAS } from "../../utiles/utile";
-import { useEffect, useState } from "react";
-import { MaterialIcons } from '@expo/vector-icons';
-
-const screenHeight = Dimensions.get("window").height;
+import { useEffect, useState } from "react"
 
 export default function MyLog() {
   const [userInfo, setUserInfo] = useState({})
   const [myLogInfo, setMyLogInfo] = useState({})
   const [isLogin, setIsLogin] = useState(false)
+  const [refreshing, setRefreshing] = useState(false);
 
+
+  const handleRefresh = async () => {
+  setRefreshing(true);
+  try {
+    // 重新获取游记数据，假设你已有 fetchMyLogs 函数
+    await fetchUserLogData(); 
+  } catch (error) {
+    console.error('刷新失败', error);
+  } finally {
+    setRefreshing(false);
+  }
+};
 
   const fetchUserLogData = async () => {
     try {
@@ -104,7 +114,7 @@ export default function MyLog() {
             try {
               await api.delete(`/myLog/deleteLogs/${item._id}`).then((res) => {
                 console.log(res.data);
-                ToastAndroid.show("删除成功",ToastAndroid.SHORT);
+                ToastAndroid.show("删除成功", ToastAndroid.SHORT);
               });
               fetchUserLogData();
             } catch (error) {
@@ -230,6 +240,8 @@ export default function MyLog() {
             <Text style={styles.sectionTitle}>我的游记</Text>
             <FlatList
               data={myLogInfo}
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
               renderItem={({ item }) => (
                 <View style={styles.logItem}>
                   <TouchableOpacity disabled={!(item.state === "已通过")} onPress={() => router.push({ pathname: 'logDetails', params: { log: JSON.stringify(item) } })}>
@@ -240,10 +252,10 @@ export default function MyLog() {
                     <Text style={[styles.logStatus, { color: getStatusColor(item.state) }]}>{item.state}</Text>
                   </View>
                   <View style={{ justifyContent: 'center', }}>
-                    <View style={{ marginVertical: 5, marginRight:10  }}>
+                    <View style={{ marginVertical: 5, marginRight: 10 }}>
                       {(!(item.state === "已通过") && <Button title="编辑" onPress={() => router.push('login')} />)}
                     </View>
-                    <View style={{ marginVertical: 5, marginRight:10 }}>
+                    <View style={{ marginVertical: 5, marginRight: 10 }}>
                       <Button title="删除" onPress={() => handleDelete(item)} />
                     </View>
                   </View>
