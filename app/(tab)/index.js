@@ -111,7 +111,6 @@ export default function Index() {
         count: countEachLoad,
       };
       const response = await api.get("/home/travelLogs", { params });
-      console.log(response)
       // 使用 Promise.all() 来等待所有的 Image.getSize() 异步操作完成，然后返回一个新的数组 newTravelLogs。在 map() 函数中，使用 async/await 来等待每个 Image.getSize() 异步操作的完成，然后将结果存入新数组中
       const newTravelLogs = await Promise.all(
         response.data.map(async (item) => {

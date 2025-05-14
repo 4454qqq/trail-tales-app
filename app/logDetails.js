@@ -16,10 +16,11 @@ export default function Details() {
   // 获取路由参数
   const params = useLocalSearchParams();
   const log = JSON.parse(params.log || "{}");
-  const logId = log._id;
-  const userId = log.userId;
-  const userAvatar = log.userAvatar;
-  const userName = log.username;
+  console.log(log);
+  
+  const logId = log._id; //接口参数，用于调用接口获取游击详情
+  const userAvatar = log.userAvatar; //用户头像
+  const userName = log.username; //用户名称
 
   const [travelLog, setTravelLog] = useState(null);
 

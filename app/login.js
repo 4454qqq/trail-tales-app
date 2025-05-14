@@ -115,7 +115,7 @@ const LoginScreen = () => {
                 </TouchableOpacity>
 
                 {/* 注册按钮 */}
-                <TouchableOpacity style={styles.registerButton} onPress={() => navigation.navigate("register")}>
+                <TouchableOpacity style={styles.registerButton} onPress={() => router.push("register")}>
                     <Text style={styles.buttonText}>注册</Text>
                 </TouchableOpacity>
             </View>
