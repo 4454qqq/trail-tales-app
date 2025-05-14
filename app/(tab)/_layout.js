@@ -1,6 +1,26 @@
-import { Tabs } from 'expo-router';
-import { MaterialIcons, Ionicons } from "@expo/vector-icons";
-import { StyleSheet } from "react-native";
+import { router, Tabs } from 'expo-router';
+import { MaterialIcons } from "@expo/vector-icons";
+import { StyleSheet, View, ToastAndroid, TouchableWithoutFeedback } from "react-native";
+import { getItemFromAS } from '../../utiles/utile'
+
+function PublishButton() {
+  const addButtonPress = async () => {
+    let user = await getItemFromAS("userInfo");
+    user = JSON.parse(user);
+    if (user) {
+      router.push("logPublic");
+    } else {
+      ToastAndroid.show("请先登录~", ToastAndroid.SHORT);
+    }
+  };
+  return (
+    <TouchableWithoutFeedback onPress={addButtonPress}>
+      <View style={styles.addButton}>
+        <MaterialIcons name="add" size={32} color="white" />
+      </View>
+    </TouchableWithoutFeedback>
+  );
+}
 
 export default function TabLayout() {
   return (
@@ -22,10 +42,10 @@ export default function TabLayout() {
         name="logPublic"
         options={{
           tabBarLabel: "游记发布",
-          tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="library-add" color={color} size={size} />
-          ),
-          // tabBarButton: () => <PublishButton />,
+          // tabBarIcon: ({ color, size }) => (
+          //   <MaterialIcons name="library-add" color={color} size={size} />
+          // ),
+          tabBarButton: () => <PublishButton />,
           tabBarStyle: { display: "none" },
         }} />
       <Tabs.Screen
@@ -46,6 +66,17 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   tabBarIcon: {
-   fontSize: 12
+    fontSize: 12
+  },
+  addButton: {
+    width: 40,
+    paddingVertical: 5,
+    borderRadius: 50,
+    backgroundColor: "#3498DB",
+    alignItems: "center",
+
+    margin: 2,
+    marginLeft:45,
+    marginTop:5
   },
 });
