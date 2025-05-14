@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   ToastAndroid
 } from "react-native";
-import { MaterialIcons} from "@expo/vector-icons";
+import { MaterialIcons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { api, getItemFromAS } from "../utiles/utile";
@@ -17,7 +17,7 @@ export default function Details() {
   const params = useLocalSearchParams();
   const log = JSON.parse(params.log || "{}");
   console.log(log);
-  
+
   const logId = log._id; //接口参数，用于调用接口获取游击详情
   const userAvatar = log.userAvatar; //用户头像
   const userName = log.username; //用户名称
@@ -46,8 +46,19 @@ export default function Details() {
     const day = date.getDate().toString().padStart(2, "0");
     return `${year}-${month}-${day}`;
   };
+  const matchText = (text) => {
+    matches = text.match(/\S+市/g);
+    // 输出匹配到的结果
+    if (matches) {
+      console.log(matches[0]);
+      return matches[0];
+    } else {
+      return null;
+    }
+  };
 
-    // 分享功能
+
+  // 分享功能
   const handleSharePress = async () => {
     let user = await getItemFromAS("userInfo");
     user = JSON.parse(user);
@@ -86,7 +97,7 @@ export default function Details() {
           </TouchableOpacity>
         </View>
         <View style={styles.leftTopScreen}>
-          <TouchableOpacity  onPress={handleSharePress}>
+          <TouchableOpacity onPress={handleSharePress}>
             <MaterialIcons
               name="ios-share"
               size={30}
@@ -122,7 +133,7 @@ export default function Details() {
                     ]}
                   >
                     {travelLog.destination
-                      ? matchText(travelLog.destination)
+                      ? travelLog.destination
                       : "XX"}
                   </Text>
                 )}

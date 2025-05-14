@@ -1,11 +1,18 @@
-import {
-  View, Text, FlatList, StyleSheet, Image, Button,
-  Dimensions, Alert, TouchableOpacity, ImageBackground,
-  ToastAndroid
-} from "react-native";
 import { router } from "expo-router";
-import { api, getItemFromAS, setAuthHeader, removeValueFromAS } from "../../utiles/utile";
-import { useEffect, useState } from "react"
+import { useEffect, useState } from "react";
+import {
+  Alert,
+  Button,
+  FlatList,
+  Image,
+  ImageBackground,
+  StyleSheet,
+  Text,
+  ToastAndroid,
+  TouchableOpacity,
+  View
+} from "react-native";
+import { api, getItemFromAS, removeValueFromAS, setAuthHeader } from "../../utiles/utile";
 
 export default function MyLog() {
   const [userInfo, setUserInfo] = useState({})
@@ -253,7 +260,7 @@ export default function MyLog() {
                   </View>
                   <View style={{ justifyContent: 'center', }}>
                     <View style={{ marginVertical: 5, marginRight: 10 }}>
-                      {(!(item.state === "已通过") && <Button title="编辑" onPress={() => router.push('login')} />)}
+                      {(!(item.state === "已通过") && <Button title="编辑"  />)}
                     </View>
                     <View style={{ marginVertical: 5, marginRight: 10 }}>
                       <Button title="删除" onPress={() => handleDelete(item)} />
