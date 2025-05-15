@@ -1,21 +1,22 @@
+import { MaterialIcons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system";
 import * as ImagePicker from "expo-image-picker";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
   Button,
-  FlatList,
   Image,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   Text,
   TextInput,
   ToastAndroid,
+  TouchableOpacity,
   View,
-  TouchableOpacity
 } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
 import DropDownPicker from "react-native-dropdown-picker";
-import { CheckBox } from 'react-native-elements';
+import { CheckBox } from "react-native-elements";
 import Toast from "react-native-root-toast";
 import config from "../../config.json";
 import { api } from "../../utiles/utile";
@@ -33,7 +34,7 @@ export default function PublishLog() {
   const destinations = config.destination;
   const [selectedMonth, setSelectedMonth] = useState(null);
   const months = ["一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"];
-  const [labelText, setLabelText] = useState();
+  const [labelText, setLabelText] = useState([]);
   const labels = config.topic;
   const maxTitleLength = 20;
   const formaDate = new FormData();
@@ -64,35 +65,22 @@ export default function PublishLog() {
   };
 
   const handlePickImage = async () => {
-    // 返回一个promise对象
     const image = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All, // 允许选择所有类型的媒体
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsEditing: true,
       quality: 0.5,
     });
     const url = image.assets[0].uri;
     const suffix = url.substring(url.lastIndexOf(".") + 1);
     try {
-      // 读取图片的内容
       const data = await FileSystem.readAsStringAsync(url, {
         encoding: FileSystem.EncodingType.Base64,
       });
-      // 传给后端图片数据和后缀名
-      // console.log(data.length);
       setImageData([...imageData, [data, suffix]]);
     } catch (error) {
       console.log("Error reading image file:", error);
     }
-
     setImageUrl([...imageUrl, url]);
-  };
-
-  const handleLabelToggle = (label) => {
-    if (labelText.includes(label)) {
-      setLabelText(labelText.filter((l) => l !== label));
-    } else {
-      setLabelText([...labelText, label]);
-    }
   };
 
   const handleSubmitData = async () => {
@@ -102,7 +90,6 @@ export default function PublishLog() {
     }
 
     formaDate.append("images", imageData);
-
     const httpUrls = imageUrl
       .filter((url) => url.startsWith("http"))
       .map((url) => url.match(/\/([^/]+\.[a-zA-Z0-9]+)$/)[1]);
@@ -129,115 +116,115 @@ export default function PublishLog() {
         console.log("提交失败:", err);
       });
   };
+
   const clearData = () => {
-    // 页面初始化时清空所有字段
     setTitle("");
     setContent("");
     setImageUrl([]);
     setImageData([]);
     setDestination(null);
     setSelectedMonth(null);
-    setLabelText(null);
-  }
+    setLabelText([]);
+  };
+
   useEffect(() => {
-    clearData()
+    clearData();
   }, []);
-  useFocusEffect(
-    useCallback(() => {
-      clearData()
-    }, [logId]));
+  useFocusEffect(useCallback(() => { clearData(); }, [logId]));
 
   return (
-    <View>
-      <TouchableOpacity
-        onPress={() => {
-          router.back();
-        }}
-      >
-        <MaterialIcons name="chevron-left" size={36} color="#989797" />
-      </TouchableOpacity>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      style={{ flex: 1 }}
+    >
+      <ScrollView contentContainerStyle={{ padding: 15 }} keyboardShouldPersistTaps="handled">
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={{ marginVertical: 10 , marginLeft:-10}}
+        >
+          <MaterialIcons name="chevron-left" size={30} color="#989797" />
+        </TouchableOpacity>
 
-      <FlatList
-        contentContainerStyle={{ padding: 20 }}
-        data={[1]} // 使用一个空数据，避免报错
-        keyExtractor={() => "1"}
-        renderItem={() => (
-          <>
-            <Text>标题</Text>
-            <TextInput
-              value={title}
-              onChangeText={handleChangeTitle}
-              placeholder="请输入标题"
-              style={{ borderBottomWidth: 1, marginBottom: 10 }}
+        <Text>标题</Text>
+        <TextInput
+          value={title}
+          onChangeText={handleChangeTitle}
+          placeholder="请输入标题"
+          style={{ borderBottomWidth: 1, marginBottom: 10 }}
+        />
+
+        <Text>正文</Text>
+        <TextInput
+          value={content}
+          onChangeText={setContent}
+          placeholder="请输入内容"
+          multiline
+          numberOfLines={6}
+          style={{ borderWidth: 1, padding: 10, marginBottom: 10 }}
+        />
+
+        <Text>上传图片</Text>
+        <Button title="选择图片" onPress={handlePickImage} />
+        <ScrollView horizontal nestedScrollEnabled>
+          {imageUrl.map((uri, idx) => (
+            <Image key={idx} source={{ uri }} style={{ width: 100, height: 100, margin: 5 }} />
+          ))}
+        </ScrollView>
+
+        <Text>出行地点</Text>
+        <DropDownPicker
+          items={destinations.map(d => ({ label: d, value: d }))}
+          open={openDestination}
+          setOpen={setOpenDestination}
+          value={destination}
+          setValue={setDestination}
+          placeholder="选择出行地"
+          listMode="SCROLLVIEW"
+          scrollViewProps={{
+            nestedScrollEnabled: true,
+          }}
+          style={{ marginBottom: openDestination ? 100 : 10, zIndex: 3000 }}
+          zIndex={3000}
+        />
+
+        <Text>出行月份</Text>
+        <DropDownPicker
+          items={months.map(m => ({ label: m, value: m }))}
+          open={openMonth}
+          setOpen={setOpenMonth}
+          value={selectedMonth}
+          setValue={setSelectedMonth}
+          placeholder="选择月份"
+          listMode="SCROLLVIEW"
+          scrollViewProps={{
+            nestedScrollEnabled: true,
+          }}
+          style={{ marginBottom: openMonth ? 100 : 10, zIndex: 2000 }}
+          zIndex={2000}
+        />
+
+        <Text>主题</Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 20 }}>
+          {labels.map((label) => (
+            <CheckBox
+              key={label}
+              title={label}
+              checked={labelText.includes(label)}
+              onPress={() => setLabelText(label)}
+              containerStyle={{
+                backgroundColor: 'transparent',
+                borderWidth: 0,
+                padding: 5,
+                margin: 5,
+              }}
+              textStyle={{ fontSize: 14 }}
+              checkedColor="#2196F3"
             />
+          ))}
+        </View>
 
-            <Text>正文</Text>
-            <TextInput
-              value={content}
-              onChangeText={setContent}
-              placeholder="请输入内容"
-              multiline
-              numberOfLines={6}
-              style={{ borderWidth: 1, padding: 10, marginBottom: 10 }}
-            />
-
-            <Text>上传图片</Text>
-            <Button title="选择图片" onPress={handlePickImage} />
-            <ScrollView horizontal>
-              {imageUrl.map((uri, idx) => (
-                <Image key={idx} source={{ uri }} style={{ width: 100, height: 100, margin: 5 }} />
-              ))}
-            </ScrollView>
-
-            <Text>出行地点</Text>
-            <View style={{ marginBottom: 10, zIndex: 9999 }}>
-              <DropDownPicker
-                items={destinations.map(d => ({ label: d, value: d }))}
-                open={openDestination}
-                setOpen={() => setOpenDestination(!openDestination)}
-                value={destination}
-                setValue={setDestination}
-                placeholder="选择出行地"
-              />
-            </View>
-
-            <Text>出行月份</Text>
-            <View style={{ marginBottom: 10 }}>
-              <DropDownPicker
-                items={months.map(m => ({ label: m, value: m }))}
-                open={openMonth}
-                setOpen={() => setOpenMonth(!openMonth)}
-                value={selectedMonth}
-                setValue={setSelectedMonth}
-                placeholder="选择月份"
-              />
-            </View>
-
-            <Text>主题</Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 20 }}>
-              {labels.map((label) => (
-                <CheckBox
-                  key={label}
-                  title={label}
-                  checked={labelText === label}
-                  onPress={() => setLabelText(label)}
-                  containerStyle={{
-                    backgroundColor: 'transparent',
-                    borderWidth: 0,
-                    padding: 5,
-                    margin: 5,
-                    width: 'auto',
-                  }}
-                  textStyle={{ fontSize: 14 }}
-                  checkedColor="#2196F3" // 可选：设置勾选颜色
-                />
-              ))}
-            </View>
-
-            <Button title="发布" onPress={handleSubmitData} />
-          </>
-        )}
-      />
-    </View>
+        <Button title="发布" onPress={handleSubmitData} />
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
