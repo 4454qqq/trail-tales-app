@@ -180,35 +180,16 @@ export default function MyLog() {
                     justifyContent: "center",
                   }}
                 >
-                  {userInfo ? (
-                    <Text
-                      style={{
-                        fontWeight: "bold",
-                        color: "#000",
-                        fontSize: 25,
-                        fontFamily: "serif",
-                      }}
-                    >
-                      {userInfo && userInfo.username}
-                    </Text>
-                  ) : (
-                    <TouchableOpacity
-                      onPress={() => {
-                        router.push({ pathname: 'login' })
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontWeight: "bold",
-                          color: "#000",
-                          fontSize: 15,
-                          fontFamily: "serif",
-                        }}
-                      >
-                        游客请登录
-                      </Text>
-                    </TouchableOpacity>
-                  )}
+                  <Text
+                    style={{
+                      fontWeight: "bold",
+                      color: "#000",
+                      fontSize: 25,
+                      fontFamily: "serif",
+                    }}
+                  >
+                    {userInfo && userInfo.username}
+                  </Text>
                   <Text
                     style={{
                       color: "green",
