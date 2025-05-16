@@ -2,8 +2,8 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { Video } from 'expo-av';
 import * as FileSystem from "expo-file-system";
 import * as ImagePicker from "expo-image-picker";
-import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { router, useLocalSearchParams } from "expo-router";
+import { useEffect, useState } from "react";
 import {
   Button,
   Image,
@@ -33,7 +33,6 @@ export default function PublishLog() {
   const [imageData, setImageData] = useState([]);
   const [videoUrl, setVideoUrl] = useState([]);
   const [videoData, setVideoData] = useState([]);
-
 
   const [destination, setDestination] = useState(null);
   const destinations = config.destination;
@@ -142,8 +141,7 @@ export default function PublishLog() {
       ToastAndroid.show("请至少上传一张图片，填写标题和内容~", ToastAndroid.SHORT);
       return;
     }
-    console.log(imageUrl);
-
+    
     formaImgDate.append("images", imageData);
     formaVideoDate.append("videos", videoData);
     const httpImgUrls = imageUrl
@@ -171,6 +169,7 @@ export default function PublishLog() {
         state: "待审核",
       })
       .then((res) => {
+        clearData();
         ToastAndroid.show("提交成功", ToastAndroid.SHORT);
         router.push("myLog");
       })
@@ -191,10 +190,31 @@ export default function PublishLog() {
     setLabelText([]);
   };
 
+  //编译已提交的游记时调用
+  const fetchLogDetail = async () => {
+    try {
+      const response = await api.get(`/logDetail/findLog/${logId}`);
+      const data = await response.data;
+      console.log(data);
+      setImageUrl(data.imagesUrl);
+      setVideoUrl(data.videosUrl)
+      setContent(data.content);
+      setTitle(data.title);
+      setSelectedMonth(data.travelMonth);
+      setLabelText(data.topic);
+      setDestination(data.destination);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   useEffect(() => {
-    clearData();
-  }, []);
-  useFocusEffect(useCallback(() => { clearData(); }, [logId]));
+    if (logId) {
+      fetchLogDetail();
+    } else {
+      clearData();
+    }
+  }, [logId]);
 
   return (
     <KeyboardAvoidingView
@@ -235,8 +255,8 @@ export default function PublishLog() {
             // <Image key={idx} source={{ uri }} style={{ width: 100, height: 100, margin: 5 }} />
             <View key={idx} style={styles.mediaContainer}>
               <Image source={{ uri }} style={styles.media} />
-              <TouchableOpacity 
-                style={styles.deleteButton} 
+              <TouchableOpacity
+                style={styles.deleteButton}
                 onPress={() => handleRemoveMedia('image', idx)}
               >
                 <MaterialIcons name="close" size={20} color="white" />
@@ -258,8 +278,8 @@ export default function PublishLog() {
                 resizeMode="contain"
                 isLooping
               />
-              <TouchableOpacity 
-                style={styles.deleteButton} 
+              <TouchableOpacity
+                style={styles.deleteButton}
                 onPress={() => handleRemoveMedia('video', idx)}
               >
                 <MaterialIcons name="close" size={20} color="white" />

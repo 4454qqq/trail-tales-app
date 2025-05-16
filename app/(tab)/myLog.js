@@ -22,16 +22,16 @@ export default function MyLog() {
 
 
   const handleRefresh = async () => {
-  setRefreshing(true);
-  try {
-    // 重新获取游记数据，假设你已有 fetchMyLogs 函数
-    await fetchUserLogData(); 
-  } catch (error) {
-    console.error('刷新失败', error);
-  } finally {
-    setRefreshing(false);
-  }
-};
+    setRefreshing(true);
+    try {
+      // 重新获取游记数据，假设你已有 fetchMyLogs 函数
+      await fetchUserLogData();
+    } catch (error) {
+      console.error('刷新失败', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const fetchUserLogData = async () => {
     try {
@@ -42,7 +42,7 @@ export default function MyLog() {
 
       // 获取用户当前已有游记信息
       const logResponse = await api.get("/myLog/getMyLogs");
-      console.log(logResponse);
+      console.log(logResponse.data.data);
       setMyLogInfo(logResponse.data.data)
     } catch (e) {
       console.log(e.response.data.message);
@@ -256,10 +256,11 @@ export default function MyLog() {
                   <View style={styles.logDetails}>
                     <Text style={styles.logTitle}>{item.title}</Text>
                     <Text style={[styles.logStatus, { color: getStatusColor(item.state) }]}>{item.state}</Text>
+                    {(item.state === "未通过" && <Text style={[styles.logInstruction, { color: getStatusColor(item.state) }]}>{item.instruction}</Text>)}
                   </View>
                   <View style={{ justifyContent: 'center', }}>
                     <View style={{ marginVertical: 5, marginRight: 10 }}>
-                      {(!(item.state === "已通过") && <Button title="编辑"  />)}
+                      <Button title="编辑" onPress={() => { router.push({ pathname: 'logPublic', params: { log: JSON.stringify(item) } }) }} />
                     </View>
                     <View style={{ marginVertical: 5, marginRight: 10 }}>
                       <Button title="删除" onPress={() => handleDelete(item)} />
@@ -361,6 +362,10 @@ const styles = StyleSheet.create({
   },
   logStatus: {
     fontSize: 14,
+    color: '#888',
+  },
+  logInstruction: {
+    fontSize: 12,
     color: '#888',
   },
 });
