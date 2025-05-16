@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { Feather } from '@expo/vector-icons';
-import { api, storeDataToAS } from '../utiles/utile';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { api } from '../utiles/utile';
 import { router } from "expo-router";
 export default function Register() {
     const [username, setUsername] = useState();
     const [password, setPassword] = useState();
     const [confirmPassword, setConfirmPassword] = useState();
     const [errorMessage, setErrorMessage] = useState("");
+    // 处理限流操作
+    const [isRegisterDisabled, setIsRegisterDisabled] = useState(false);
+    const [countdown, setCountdown] = useState(0);
+
 
     const handleTotalCheck = () => {
         if (!username) {
@@ -22,10 +25,25 @@ export default function Register() {
         }
         return false;
     };
+
+    // 处理限流禁用提交按钮的倒计时效果
+    useEffect(() => {
+        let timer;
+        if (countdown > 0) {
+            timer = setTimeout(() => {
+                setCountdown(countdown - 1);
+            }, 1000);
+        } else if (countdown === 0 && isRegisterDisabled) {
+            setIsRegisterDisabled(false);
+            setErrorMessage("");
+        }
+        return () => clearTimeout(timer);
+    }, [countdown, isRegisterDisabled]);
+
     const handleReigster = async () => {
-        console.log(handleTotalCheck(),password)
+        console.log(handleTotalCheck(), password)
         if (handleTotalCheck()) {
-            
+
             await api
                 .post(
                     "/login/register",
@@ -41,7 +59,31 @@ export default function Register() {
                 })
                 .catch((err) => {
                     console.log("提交失败:", err.response.data.message);
-                    setErrorMessage(err.response.data.message);
+                    // 默认错误信息
+                    let message = "注册失败，请稍后再试";
+
+                    if (err.response) {
+                        const resData = err.response.data;
+
+                        if (resData.status === "error") {
+                            // 限流提示
+                            if (err.response.status === 429 && resData.retryAfter) {
+                                const hours = Math.ceil(resData.retryAfter / 60);
+                                message = `${resData.message}，请在 ${hours} 小时后再试`;
+                                console.log(message);
+                                
+                                setIsRegisterDisabled(true);
+                                setCountdown(resData.retryAfter);
+                            }
+                            // 登录失败提示，包含剩余尝试次数
+                            else if (resData.message && resData.remainingAttempts !== undefined) {
+                                message = `${resData.message}，剩余尝试次数：${resData.remainingAttempts}`;
+                            } else if (resData.message) {
+                                message = resData.message;
+                            }
+                        }
+                    }
+                    setErrorMessage(message);
                 });
         }
     };
@@ -87,7 +129,7 @@ export default function Register() {
                 </View>
 
                 {/* 注册按钮 */}
-                <TouchableOpacity style={styles.registerButton} onPress={handleReigster}>
+                <TouchableOpacity style={[styles.registerButton, isRegisterDisabled && styles.disabledButton]} onPress={handleReigster} disabled={isRegisterDisabled}>
                     <Text style={styles.buttonText}>注册</Text>
                 </TouchableOpacity>
 
@@ -148,6 +190,9 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 10,
+    },
+        disabledButton: {
+        backgroundColor: '#cccccc',
     },
     buttonText: {
         color: '#fff',
