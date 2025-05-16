@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState} from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { MaterialIcons } from "@expo/vector-icons";
 import { api, storeDataToAS } from '../utiles/utile';
@@ -8,6 +8,10 @@ const LoginScreen = () => {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState('');
     const [errorMessage, setErrorMessage] = useState("");
+    // 处理限流操作
+    const [isLoginDisabled, setIsLoginDisabled] = useState(false);
+    const [countdown, setCountdown] = useState(0);
+
 
     const handleInputUsername = (text) => {
         setUsername(text);
@@ -29,6 +33,20 @@ const LoginScreen = () => {
             return true;
         }
     };
+
+    // 处理限流禁用提交按钮的倒计时效果
+    useEffect(() => {
+        let timer;
+        if (countdown > 0) {
+            timer = setTimeout(() => {
+                setCountdown(countdown - 1);
+            }, 1000);
+        } else if (countdown === 0 && isLoginDisabled) {
+            setIsLoginDisabled(false);
+            setErrorMessage("");
+        }
+        return () => clearTimeout(timer);
+    }, [countdown, isLoginDisabled]);
 
     const handleLogin = async () => {
         if (handleCheck()) {
@@ -53,7 +71,31 @@ const LoginScreen = () => {
                 .catch((err) => {
                     console.log(err);
                     console.log("提交失败:", err.response.data.message);
-                    setErrorMessage(err.response.data.message);
+                    // 默认错误信息
+                    let message = "登录失败，请稍后再试";
+
+                    if (err.response) {
+                        const resData = err.response.data;
+
+                        if (resData.status === "error") {
+                            // 限流提示
+                            if (err.response.status === 429 && resData.retryAfter) {
+                                const mins = Math.ceil(resData.retryAfter / 60);
+                                message = `${resData.message}，请在 ${mins} 分钟后再试`;
+                                setIsLoginDisabled(true);
+                                setCountdown(resData.retryAfter);
+                            }
+                            // 登录失败提示，包含剩余尝试次数
+                            else if (resData.message && resData.remainingAttempts !== undefined) {
+                                message = `${resData.message}，剩余尝试次数：${resData.remainingAttempts}`;
+                            } else if (resData.message) {
+                                message = resData.message;
+                            }
+                        }
+                    }
+
+                    setErrorMessage(message);
+                    // setErrorMessage(err.response.data.message);
                 });
         }
     };
@@ -86,7 +128,7 @@ const LoginScreen = () => {
                 </View>
 
                 {/* 密码输入框 */}
-                <View style={{...styles.inputWrapper, marginBottom:10}}>
+                <View style={{ ...styles.inputWrapper, marginBottom: 10 }}>
                     <TextInput
                         style={styles.input}
                         placeholder="请输入密码"
@@ -105,12 +147,19 @@ const LoginScreen = () => {
                         </TouchableOpacity>
                     )}
                 </View>
-                <View style={{ alignItems: "center", marginBottom:10 }}>
+                <View style={{ alignItems: "center", marginBottom: 10 }}>
                     <Text style={{ color: "red" }}>{errorMessage}</Text>
                 </View>
 
                 {/* 登录按钮 */}
-                <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+                <TouchableOpacity
+                    style={[
+                        styles.loginButton,
+                        isLoginDisabled && styles.disabledButton
+                    ]}
+                    onPress={handleLogin}
+                    disabled={isLoginDisabled}
+                >
                     <Text style={styles.buttonText}>登录</Text>
                 </TouchableOpacity>
 
@@ -176,6 +225,9 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 10,
+    },
+    disabledButton: {
+        backgroundColor: '#cccccc',
     },
     registerButton: {
         width: '100%',
