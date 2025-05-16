@@ -140,9 +140,6 @@ export default function MyLog() {
   }, [])
 
 
-  {/* <Text>我的游记</Text>
-      <Link href={'login'}>Login</Link>
-      <Link href={'register'}>register</Link> */}
   return (
     <View style={styles.container}>
       {!isLogin ? (
@@ -241,7 +238,7 @@ export default function MyLog() {
                   </View>
                   <View style={{ justifyContent: 'center', }}>
                     <View style={{ marginVertical: 5, marginRight: 10 }}>
-                      <Button title="编辑" onPress={() => { router.push({ pathname: 'logPublic', params: { log: JSON.stringify(item) } }) }} />
+                       {(!(item.state === "已通过") &&<Button title="编辑" onPress={() => { router.push({ pathname: 'logPublic', params: { log: JSON.stringify(item) } }) }} />)}
                     </View>
                     <View style={{ marginVertical: 5, marginRight: 10 }}>
                       <Button title="删除" onPress={() => handleDelete(item)} />
