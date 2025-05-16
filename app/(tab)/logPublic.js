@@ -93,7 +93,7 @@ export default function PublishLog() {
     setImageUrl([...imageUrl, url]);
   };
 
-  const handlePickMedia = async () => {
+  const handlePickVideo = async () => {
     if (videoUrl.length > 0) {
       ToastAndroid.show("最多上传1个视频", ToastAndroid.SHORT);
       return;
@@ -246,7 +246,7 @@ export default function PublishLog() {
         </ScrollView>
 
         <Text>上传视频</Text>
-        <Button title="选择视频" onPress={handlePickMedia} />
+        <Button title="选择视频" onPress={handlePickVideo} />
 
         <ScrollView horizontal nestedScrollEnabled>
           {videoUrl.map((uri, idx) => (

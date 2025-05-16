@@ -1,8 +1,9 @@
-import React, { useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { MaterialIcons } from "@expo/vector-icons";
 import { api, storeDataToAS } from '../utiles/utile';
 import { router } from "expo-router";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const LoginScreen = () => {
     const [username, setUsername] = useState("");
@@ -34,19 +35,92 @@ const LoginScreen = () => {
         }
     };
 
-    // 处理限流禁用提交按钮的倒计时效果
+    // // 处理限流禁用提交按钮的倒计时效果
+    // useEffect(() => {
+    //     let timer;
+    //     if (countdown > 0) {
+    //         timer = setTimeout(() => {
+    //             setCountdown(countdown - 1);
+    //         }, 1000);
+    //     } else if (countdown === 0 && isLoginDisabled) {
+    //         setIsLoginDisabled(false);
+    //         setErrorMessage("");
+    //     }
+    //     return () => clearTimeout(timer);
+    // }, [countdown, isLoginDisabled]);
+
+    // 加载保存的限流状态
     useEffect(() => {
-        let timer;
+        const loadRateLimitStatus = async () => {
+            try {
+                const saved = await AsyncStorage.getItem('@login_rate_limit');
+                if (saved) {
+                    const { expiresAt } = JSON.parse(saved);
+                    const remainingSeconds = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
+
+                    if (remainingSeconds > 0) {
+                        setIsLoginDisabled(true);
+                        setCountdown(remainingSeconds);
+                    } else {
+                        await AsyncStorage.removeItem('@login_rate_limit');
+                    }
+                }
+            } catch (e) {
+                console.error('加载限流状态失败:', e);
+            }
+        };
+
+        loadRateLimitStatus();
+    }, []);
+
+    // 处理倒计时
+    useEffect(() => {
+        let loginTimer;
         if (countdown > 0) {
-            timer = setTimeout(() => {
-                setCountdown(countdown - 1);
+            loginTimer = setInterval(() => {
+                setCountdown(prev => {
+                    if (prev <= 1) {
+                        clearInterval(loginTimer);
+                        setIsLoginDisabled(false);
+                        setErrorMessage("")
+                        AsyncStorage.removeItem('@login_rate_limit');
+                        return 0;
+                    }
+                    else{
+                        setErrorMessage("操作频繁")
+                    }
+                    return prev - 1;
+                });
             }, 1000);
-        } else if (countdown === 0 && isLoginDisabled) {
-            setIsLoginDisabled(false);
-            setErrorMessage("");
         }
-        return () => clearTimeout(timer);
-    }, [countdown, isLoginDisabled]);
+        return () => clearInterval(loginTimer);
+    }, [countdown]);
+
+    // 保存限流状态
+    const saveRateLimitStatus = async (retryAfterSeconds) => {
+        const expiresAt = Date.now() + (retryAfterSeconds * 1000);
+        try {
+            await AsyncStorage.setItem('@login_rate_limit', JSON.stringify({ expiresAt }));
+            setIsLoginDisabled(true);
+            setCountdown(retryAfterSeconds);
+        } catch (e) {
+            console.error('保存限流状态失败:', e);
+        }
+    };
+
+    // 格式化时间显示
+    const formatTime = (seconds) => {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = seconds % 60;
+
+        if (hours > 0) {
+            return `${hours}小时${minutes}分${secs}秒`;
+        } else if (minutes > 0) {
+            return `${minutes}分${secs}秒`;
+        }
+        return `${secs}秒`;
+    };
 
     const handleLogin = async () => {
         if (handleCheck()) {
@@ -68,7 +142,7 @@ const LoginScreen = () => {
                     );
                     router.push('(tab)')
                 })
-                .catch((err) => {
+                .catch(async (err) => {
                     console.log(err);
                     console.log("提交失败:", err.response.data.message);
                     // 默认错误信息
@@ -80,14 +154,16 @@ const LoginScreen = () => {
                         if (resData.status === "error") {
                             // 限流提示
                             if (err.response.status === 429 && resData.retryAfter) {
-                                const mins = Math.ceil(resData.retryAfter / 60);
-                                message = `${resData.message}，请在 ${mins} 分钟后再试`;
-                                setIsLoginDisabled(true);
-                                setCountdown(resData.retryAfter);
+                                // const mins = Math.ceil(resData.retryAfter / 60);
+                                // message = `${resData.message}，请在 ${mins} 分钟后再试`;
+                                // setIsLoginDisabled(true);
+                                // setCountdown(resData.retryAfter);                              
+                                await saveRateLimitStatus(Math.ceil(resData.retryAfter / 60) * 60);
+                                message = '操作频繁';
                             }
                             // 登录失败提示，包含剩余尝试次数
                             else if (resData.message && resData.remainingAttempts !== undefined) {
-                                message = `${resData.message}，剩余尝试次数：${resData.remainingAttempts}`;
+                                message = `${resData.message}，剩余尝试次数：${resData.remainingAttempts - 1}`;
                             } else if (resData.message) {
                                 message = resData.message;
                             }
@@ -148,7 +224,9 @@ const LoginScreen = () => {
                     )}
                 </View>
                 <View style={{ alignItems: "center", marginBottom: 10 }}>
-                    <Text style={{ color: "red" }}>{errorMessage}</Text>
+                    <Text style={{ color: "red" }}>{errorMessage}
+                        {isLoginDisabled && countdown > 0 &&
+                            ` (${formatTime(countdown)}后重试)`}</Text>
                 </View>
 
                 {/* 登录按钮 */}
