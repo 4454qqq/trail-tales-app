@@ -1,23 +1,23 @@
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  Image,
-  TouchableOpacity,
-  ToastAndroid
-} from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
+import { Video } from 'expo-av';
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
+import {
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  ToastAndroid,
+  TouchableOpacity,
+  View
+} from "react-native";
+import ImageSlider from "../components/mediaSlider";
 import { api, getItemFromAS } from "../utiles/utile";
-import ImageSlider from "../components/imageSlider";
 export default function Details() {
   // 获取路由参数
   const params = useLocalSearchParams();
   const log = JSON.parse(params.log || "{}");
-  console.log(log);
-
+  
   const logId = log._id; //接口参数，用于调用接口获取游击详情
   const userAvatar = log.userAvatar; //用户头像
   const userName = log.username; //用户名称
@@ -30,6 +30,7 @@ export default function Details() {
       const response = await api.get(`/logDetail/findLog/${logId}`);
       const data = await response.data;
       console.log(data);
+      
       setTravelLog({
         ...data,
         editTime: formatDate(data.editTime),
@@ -69,7 +70,7 @@ export default function Details() {
     }
   };
 
-  useEffect(() => { fetchLogDetail(); }, [])
+  useEffect(() => { fetchLogDetail() }, [])
 
 
   return (
@@ -109,7 +110,7 @@ export default function Details() {
 
       {/* 中间的滚动视图 */}
       <ScrollView style={{ flex: 1 }}>
-        {travelLog && <ImageSlider imageUrls={travelLog.imagesUrl} />}
+        {travelLog && <ImageSlider videosUrl={travelLog.videosUrl[0]} imageUrls={travelLog.imagesUrl} />}
         {travelLog && <Text style={styles.titleText}>{travelLog.title}</Text>}
         {/* 地点、出行时间 */}
         <View style={{ justifyContent: "center", alignItems: "center" }}>

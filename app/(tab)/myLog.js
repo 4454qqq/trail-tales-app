@@ -38,7 +38,6 @@ export default function MyLog() {
       await setAuthHeader();
       // 获取用户信息
       const userResponse = await api.get("/userInfo/info");
-      console.log(userResponse.data.data);
       setUserInfo(userResponse.data.data);
 
       // 获取用户当前已有游记信息

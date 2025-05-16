@@ -1,4 +1,5 @@
 import { MaterialIcons } from "@expo/vector-icons";
+import { Video } from 'expo-av';
 import * as FileSystem from "expo-file-system";
 import * as ImagePicker from "expo-image-picker";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
@@ -9,15 +10,15 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   ToastAndroid,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import DropDownPicker from "react-native-dropdown-picker";
 import { CheckBox } from "react-native-elements";
-import Toast from "react-native-root-toast";
 import config from "../../config.json";
 import { api } from "../../utiles/utile";
 
@@ -30,6 +31,10 @@ export default function PublishLog() {
   const [content, setContent] = useState("");
   const [imageUrl, setImageUrl] = useState([]);
   const [imageData, setImageData] = useState([]);
+  const [videoUrl, setVideoUrl] = useState([]);
+  const [videoData, setVideoData] = useState([]);
+
+
   const [destination, setDestination] = useState(null);
   const destinations = config.destination;
   const [selectedMonth, setSelectedMonth] = useState(null);
@@ -37,7 +42,8 @@ export default function PublishLog() {
   const [labelText, setLabelText] = useState([]);
   const labels = config.topic;
   const maxTitleLength = 20;
-  const formaDate = new FormData();
+  const formaImgDate = new FormData();
+  const formaVideoDate = new FormData();
 
   const [openDestination, setOpenDestination] = useState(false);
   const [openMonth, setOpenMonth] = useState(false);
@@ -60,15 +66,19 @@ export default function PublishLog() {
     if (length <= maxTitleLength) {
       setTitle(title);
     } else {
-      Toast.show(`标题长度不能超过${maxTitleLength}个字符`);
+      ToastAndroid.show(`标题长度不能超过${maxTitleLength}个字符`, ToastAndroid.SHORT);
     }
   };
 
   const handlePickImage = async () => {
+    if (imageUrl.length >= 6) {
+      ToastAndroid.show("最多上传6张图片", ToastAndroid.SHORT);
+      return;
+    }
     const image = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      quality: 0.5,
+      quality: 0.5,  //压缩处理
     });
     const url = image.assets[0].uri;
     const suffix = url.substring(url.lastIndexOf(".") + 1);
@@ -83,22 +93,74 @@ export default function PublishLog() {
     setImageUrl([...imageUrl, url]);
   };
 
+  const handlePickMedia = async () => {
+    if (videoUrl.length > 0) {
+      ToastAndroid.show("最多上传1个视频", ToastAndroid.SHORT);
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+      allowsEditing: false,
+      quality: 0.5,
+    });
+
+    if (result.canceled || !result.assets || result.assets.length === 0) return;
+
+    const asset = result.assets[0];
+    const uri = asset.uri;
+    const suffix = uri.substring(uri.lastIndexOf(".") + 1).toLowerCase();
+
+    try {
+      const base64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      if (suffix === "mp4" || suffix === "mov") {
+        // 视频处理
+        setVideoData([...videoData, [base64, suffix]]);
+        setVideoUrl([...videoUrl, uri]);
+      } else {
+        // 图片处理
+        setImageData([...imageData, [base64, suffix]]);
+        setImageUrl([...imageUrl, uri]);
+      }
+    } catch (error) {
+      console.log("读取文件失败:", error);
+    }
+  };
+
+  const handleRemoveMedia = (type, index) => {
+    if (type === 'image') {
+      setImageUrl(imageUrl.filter((_, i) => i !== index));
+    } else if (type === 'video') {
+      setVideoUrl(videoUrl.filter((_, i) => i !== index));
+    }
+  };
+
   const handleSubmitData = async () => {
     if (imageUrl.length === 0 || !title || !content) {
       ToastAndroid.show("请至少上传一张图片，填写标题和内容~", ToastAndroid.SHORT);
       return;
     }
+    console.log(imageUrl);
 
-    formaDate.append("images", imageData);
-    const httpUrls = imageUrl
+    formaImgDate.append("images", imageData);
+    formaVideoDate.append("videos", videoData);
+    const httpImgUrls = imageUrl
+      .filter((url) => url.startsWith("http"))
+      .map((url) => url.match(/\/([^/]+\.[a-zA-Z0-9]+)$/)[1]);
+
+    const httpVideoUrls = videoUrl
       .filter((url) => url.startsWith("http"))
       .map((url) => url.match(/\/([^/]+\.[a-zA-Z0-9]+)$/)[1]);
 
     await api
       .post("/logPublic/upload", {
         travelId: logId,
-        images: formaDate,
-        httpUrls,
+        images: formaImgDate,
+        videos: formaVideoDate,
+        httpImgUrls,
+        httpVideoUrls,
         title,
         content,
         topic: labelText,
@@ -122,6 +184,8 @@ export default function PublishLog() {
     setContent("");
     setImageUrl([]);
     setImageData([]);
+    setVideoUrl([]);
+    setVideoData([]);
     setDestination(null);
     setSelectedMonth(null);
     setLabelText([]);
@@ -140,7 +204,7 @@ export default function PublishLog() {
       <ScrollView contentContainerStyle={{ padding: 15 }} keyboardShouldPersistTaps="handled">
         <TouchableOpacity
           onPress={() => router.back()}
-          style={{ marginVertical: 10 , marginLeft:-10}}
+          style={{ marginVertical: 10, marginLeft: -10 }}
         >
           <MaterialIcons name="chevron-left" size={30} color="#989797" />
         </TouchableOpacity>
@@ -167,9 +231,45 @@ export default function PublishLog() {
         <Button title="选择图片" onPress={handlePickImage} />
         <ScrollView horizontal nestedScrollEnabled>
           {imageUrl.map((uri, idx) => (
-            <Image key={idx} source={{ uri }} style={{ width: 100, height: 100, margin: 5 }} />
+
+            // <Image key={idx} source={{ uri }} style={{ width: 100, height: 100, margin: 5 }} />
+            <View key={idx} style={styles.mediaContainer}>
+              <Image source={{ uri }} style={styles.media} />
+              <TouchableOpacity 
+                style={styles.deleteButton} 
+                onPress={() => handleRemoveMedia('image', idx)}
+              >
+                <MaterialIcons name="close" size={20} color="white" />
+              </TouchableOpacity>
+            </View>
           ))}
         </ScrollView>
+
+        <Text>上传视频</Text>
+        <Button title="选择视频" onPress={handlePickMedia} />
+
+        <ScrollView horizontal nestedScrollEnabled>
+          {videoUrl.map((uri, idx) => (
+            <View key={idx} style={styles.mediaContainer}>
+              <Video
+                source={{ uri }}
+                style={styles.media}
+                useNativeControls
+                resizeMode="contain"
+                isLooping
+              />
+              <TouchableOpacity 
+                style={styles.deleteButton} 
+                onPress={() => handleRemoveMedia('video', idx)}
+              >
+                <MaterialIcons name="close" size={20} color="white" />
+              </TouchableOpacity>
+            </View>
+          ))}
+        </ScrollView>
+
+
+
 
         <Text>出行地点</Text>
         <DropDownPicker
@@ -228,3 +328,29 @@ export default function PublishLog() {
     </KeyboardAvoidingView>
   );
 }
+
+const styles = StyleSheet.create({
+  mediaContainer: {
+    position: 'relative',
+    width: 100,
+    height: 100,
+    margin: 5
+  },
+  media: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 5
+  },
+  deleteButton: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center'
+  }
+});
+
