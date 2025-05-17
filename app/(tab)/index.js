@@ -50,9 +50,8 @@ export default function Index() {
   const [requestStatus, setRequestStatus] = useState(RequestStatus.IDLE);
 
   // 点击游记卡片执行跳转至详情页
-  // const navigation = useNavigation();
   const handlePress = (item) => {
-    router.push({pathname:'logDetails',params: { log: JSON.stringify(item) }});
+    router.push({ pathname: 'logDetails', params: { log: JSON.stringify(item) } });
   };
 
   // 分中英文计算字符长度，用于判断搜索框内容长度是否合法
@@ -93,6 +92,7 @@ export default function Index() {
   // 点击对应主题执行更新搜索的主题
   const handleTopicPress = (index) => {
     setSelectedTopic(topics[index]);
+    setTravelLogs([]);  // 立即清空列表，避免视觉闪烁
   };
 
   // 当滚动到顶部时刷新游记列表
