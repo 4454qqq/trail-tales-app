@@ -109,7 +109,7 @@ export default function Details() {
       </View>
 
       {/* 中间的滚动视图 */}
-      <ScrollView style={{ flex: 1 }}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 50 }}>
         {travelLog && <ImageSlider videosUrl={travelLog.videosUrl[0]} imageUrls={travelLog.imagesUrl} />}
         {travelLog && <Text style={styles.titleText}>{travelLog.title}</Text>}
         {/* 地点、出行时间 */}

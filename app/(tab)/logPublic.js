@@ -33,7 +33,6 @@ export default function PublishLog() {
   const [imageData, setImageData] = useState([]);
   const [videoUrl, setVideoUrl] = useState([]);
   const [videoData, setVideoData] = useState([]);
-
   const [destination, setDestination] = useState(null);
   const destinations = config.destination;
   const [selectedMonth, setSelectedMonth] = useState(null);
@@ -47,6 +46,7 @@ export default function PublishLog() {
   const [openDestination, setOpenDestination] = useState(false);
   const [openMonth, setOpenMonth] = useState(false);
 
+  // 计算输入的字符长度
   const calculateLength = (str) => {
     let length = 0;
     for (let i = 0; i < str.length; i++) {
@@ -60,6 +60,7 @@ export default function PublishLog() {
     return length;
   };
 
+  // 输入框实时更新内容
   const handleChangeTitle = (title) => {
     const length = calculateLength(title);
     if (length <= maxTitleLength) {
@@ -69,6 +70,7 @@ export default function PublishLog() {
     }
   };
 
+  // 处理图片添加
   const handlePickImage = async () => {
     if (imageUrl.length >= 6) {
       ToastAndroid.show("最多上传6张图片", ToastAndroid.SHORT);
@@ -77,8 +79,10 @@ export default function PublishLog() {
     const image = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      quality: 0.5,  //压缩处理
+      quality: 0.5,
     });
+
+    if (image.canceled) return;
     const url = image.assets[0].uri;
     const suffix = url.substring(url.lastIndexOf(".") + 1);
     try {
@@ -92,6 +96,7 @@ export default function PublishLog() {
     setImageUrl([...imageUrl, url]);
   };
 
+  // 处理视频添加
   const handlePickVideo = async () => {
     if (videoUrl.length > 0) {
       ToastAndroid.show("最多上传1个视频", ToastAndroid.SHORT);
@@ -115,11 +120,9 @@ export default function PublishLog() {
       });
 
       if (suffix === "mp4" || suffix === "mov") {
-        // 视频处理
         setVideoData([...videoData, [base64, suffix]]);
         setVideoUrl([...videoUrl, uri]);
       } else {
-        // 图片处理
         setImageData([...imageData, [base64, suffix]]);
         setImageUrl([...imageUrl, uri]);
       }
@@ -128,6 +131,7 @@ export default function PublishLog() {
     }
   };
 
+  // 删除已选视频或图片
   const handleRemoveMedia = (type, index) => {
     if (type === 'image') {
       setImageUrl(imageUrl.filter((_, i) => i !== index));
@@ -136,12 +140,13 @@ export default function PublishLog() {
     }
   };
 
+  // 提交游记内容
   const handleSubmitData = async () => {
     if (imageUrl.length === 0 || !title || !content) {
       ToastAndroid.show("请至少上传一张图片，填写标题和内容~", ToastAndroid.SHORT);
       return;
     }
-    
+
     formaImgDate.append("images", imageData);
     formaVideoDate.append("videos", videoData);
     const httpImgUrls = imageUrl
@@ -190,12 +195,10 @@ export default function PublishLog() {
     setLabelText([]);
   };
 
-  //编译已提交的游记时调用
   const fetchLogDetail = async () => {
     try {
       const response = await api.get(`/logDetail/findLog/${logId}`);
       const data = await response.data;
-      console.log(data);
       setImageUrl(data.imagesUrl);
       setVideoUrl(data.videosUrl)
       setContent(data.content);
@@ -221,38 +224,36 @@ export default function PublishLog() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       style={{ flex: 1 }}
     >
-      <ScrollView contentContainerStyle={{ padding: 15 }} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <TouchableOpacity
           onPress={() => router.back()}
-          style={{ marginVertical: 10, marginLeft: -10 }}
+          style={styles.backButton}
         >
           <MaterialIcons name="chevron-left" size={30} color="#989797" />
         </TouchableOpacity>
 
-        <Text>标题</Text>
+        <Text style={styles.label}>标题</Text>
         <TextInput
           value={title}
           onChangeText={handleChangeTitle}
           placeholder="请输入标题"
-          style={{ borderBottomWidth: 1, marginBottom: 10 }}
+          style={styles.input}
         />
 
-        <Text>正文</Text>
+        <Text style={styles.label}>正文</Text>
         <TextInput
           value={content}
           onChangeText={setContent}
           placeholder="请输入内容"
           multiline
           numberOfLines={6}
-          style={{ borderWidth: 1, padding: 10, marginBottom: 10 }}
+          style={styles.textArea}
         />
 
-        <Text>上传图片</Text>
+        <Text style={styles.label}>上传图片</Text>
         <Button title="选择图片" onPress={handlePickImage} />
-        <ScrollView horizontal nestedScrollEnabled>
+        <ScrollView horizontal nestedScrollEnabled style={styles.mediaScroll}>
           {imageUrl.map((uri, idx) => (
-
-            // <Image key={idx} source={{ uri }} style={{ width: 100, height: 100, margin: 5 }} />
             <View key={idx} style={styles.mediaContainer}>
               <Image source={{ uri }} style={styles.media} />
               <TouchableOpacity
@@ -265,10 +266,9 @@ export default function PublishLog() {
           ))}
         </ScrollView>
 
-        <Text>上传视频</Text>
+        <Text style={styles.label}>上传视频</Text>
         <Button title="选择视频" onPress={handlePickVideo} />
-
-        <ScrollView horizontal nestedScrollEnabled>
+        <ScrollView horizontal nestedScrollEnabled style={styles.mediaScroll}>
           {videoUrl.map((uri, idx) => (
             <View key={idx} style={styles.mediaContainer}>
               <Video
@@ -288,10 +288,7 @@ export default function PublishLog() {
           ))}
         </ScrollView>
 
-
-
-
-        <Text>出行地点</Text>
+        <Text style={styles.label}>出行地点</Text>
         <DropDownPicker
           items={destinations.map(d => ({ label: d, value: d }))}
           open={openDestination}
@@ -300,14 +297,12 @@ export default function PublishLog() {
           setValue={setDestination}
           placeholder="选择出行地"
           listMode="SCROLLVIEW"
-          scrollViewProps={{
-            nestedScrollEnabled: true,
-          }}
-          style={{ marginBottom: openDestination ? 100 : 10, zIndex: 3000 }}
+          scrollViewProps={{ nestedScrollEnabled: true }}
+          style={styles.dropdown}
           zIndex={3000}
         />
 
-        <Text>出行月份</Text>
+        <Text style={styles.label}>出行月份</Text>
         <DropDownPicker
           items={months.map(m => ({ label: m, value: m }))}
           open={openMonth}
@@ -316,27 +311,20 @@ export default function PublishLog() {
           setValue={setSelectedMonth}
           placeholder="选择月份"
           listMode="SCROLLVIEW"
-          scrollViewProps={{
-            nestedScrollEnabled: true,
-          }}
-          style={{ marginBottom: openMonth ? 100 : 10, zIndex: 2000 }}
+          scrollViewProps={{ nestedScrollEnabled: true }}
+          style={styles.dropdown}
           zIndex={2000}
         />
 
-        <Text>主题</Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 20 }}>
+        <Text style={styles.label}>主题</Text>
+        <View style={styles.checkboxGroup}>
           {labels.map((label) => (
             <CheckBox
               key={label}
               title={label}
               checked={labelText.includes(label)}
               onPress={() => setLabelText(label)}
-              containerStyle={{
-                backgroundColor: 'transparent',
-                borderWidth: 0,
-                padding: 5,
-                margin: 5,
-              }}
+              containerStyle={styles.checkboxContainer}
               textStyle={{ fontSize: 14 }}
               checkedColor="#2196F3"
             />
@@ -350,27 +338,69 @@ export default function PublishLog() {
 }
 
 const styles = StyleSheet.create({
+  container: {
+    padding: 15,
+    backgroundColor: '#fff'
+  },
+  backButton: {
+    marginBottom: 10,
+    marginLeft: -10,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginTop: 15,
+    marginBottom: 8,
+  },
+  input: {
+    borderBottomWidth: 1,
+    paddingVertical: 4,
+    marginBottom: 10,
+  },
+  textArea: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 10,
+    textAlignVertical: 'top',
+    marginBottom: 10,
+  },
+  mediaScroll: {
+    marginVertical: 10,
+  },
   mediaContainer: {
     position: 'relative',
     width: 100,
     height: 100,
-    margin: 5
+    marginRight: 10,
   },
   media: {
     width: '100%',
     height: '100%',
-    borderRadius: 5
+    borderRadius: 8,
   },
   deleteButton: {
     position: 'absolute',
     top: 5,
     right: 5,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    borderRadius: 10,
-    width: 20,
-    height: 20,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderRadius: 12,
+    width: 24,
+    height: 24,
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
+  },
+  dropdown: {
+    marginBottom: 10,
+  },
+  checkboxGroup: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 20,
+  },
+  checkboxContainer: {
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    padding: 5,
+    margin: 5,
   }
 });
-

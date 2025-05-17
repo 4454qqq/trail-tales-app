@@ -1,3 +1,5 @@
+import { MaterialIcons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -12,7 +14,7 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
-import { api, getItemFromAS, removeValueFromAS, setAuthHeader } from "../../utiles/utile";
+import { api, getItemFromAS, removeValueFromAS } from "../../utiles/utile";
 
 export default function MyLog() {
   const [userInfo, setUserInfo] = useState({})
@@ -33,23 +35,78 @@ export default function MyLog() {
     }
   };
 
+  const handleEditAvatar = async () => {
+  try {
+    // 首先弹出确认对话框
+    Alert.alert(
+      "修改头像",
+      "确定要修改头像吗？",
+      [
+        {
+          text: "取消",
+          onPress: () => console.log("Cancel Pressed"),
+          style: "cancel",
+        },
+        { text: "确定", onPress: handleAvatarUpdate },
+      ],
+      { cancelable: false }
+    );
+  } catch (error) {
+    console.error("头像上传出错:", error);
+    Alert.alert("上传失败", "头像上传过程中出错，请稍后再试");
+  }
+};
+  const handleAvatarUpdate = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.5,
+        base64: true,
+      });
+
+      if (!result.canceled) {
+        const image = result.assets[0];
+        const base64Data = image.base64;
+        const ext = image.uri.split('.').pop();
+
+        const formData = new FormData();
+        formData.append('images', [base64Data, ext]);
+
+        const response = await api.post('/userInfo/updateUserAvatar', {images: formData});
+
+        if (response.data.status === 'success') {
+          const newAvatarUrl = response.data.data.url;
+          Alert.alert("头像更新成功");
+          // 刷新头像
+          setUserInfo(prev => ({ ...prev, userAvatar: newAvatarUrl }));
+        } else {
+          Alert.alert("头像更新失败", response.data.message);
+        }
+      }
+    } catch (error) {
+      console.error("头像上传出错:", error);
+      Alert.alert("上传失败", "头像上传过程中出错，请稍后再试");
+    }
+  };
+
   const fetchUserLogData = async () => {
     try {
-      await setAuthHeader();
+      // await setAuthHeader();
       // 获取用户信息
       const userResponse = await api.get("/userInfo/info");
       setUserInfo(userResponse.data.data);
 
       // 获取用户当前已有游记信息
       const logResponse = await api.get("/myLog/getMyLogs");
-      console.log(logResponse.data.data);
       setMyLogInfo(logResponse.data.data)
     } catch (e) {
       console.log(e.response.data.message);
     }
   };
 
-  //获取当前用户信息
+  //获取当前用户登录状态
   const getUserDataFromAS = async () => {
     try {
       let user = await getItemFromAS("userInfo");
@@ -164,10 +221,23 @@ export default function MyLog() {
                   flex: 2,
                   alignItems: "left",
                   justifyContent: "center",
-                  marginBottom: 20,
+                  marginVertical: 20,
                   marginLeft: 10
                 }}>
                   <Image style={{ height: 80, width: 80, borderRadius: 40, }} source={{ uri: userInfo.userAvatar }} />
+                  <TouchableOpacity
+                    style={{
+                      position: 'absolute',
+                      bottom: -10,
+                      right: 0,
+                      backgroundColor: '#ffffff',
+                      borderRadius: 12,
+                      padding: 4,
+                    }}
+                    onPress={handleEditAvatar}
+                  >
+                    <MaterialIcons name="edit" size={18} color="#3498DB" />
+                  </TouchableOpacity>
                 </View>
 
                 <View
@@ -175,6 +245,7 @@ export default function MyLog() {
                     flex: 3,
                     alignItems: "flex-start",
                     justifyContent: "center",
+                    marginLeft: 15
                   }}
                 >
                   <Text
@@ -238,7 +309,7 @@ export default function MyLog() {
                   </View>
                   <View style={{ justifyContent: 'center', }}>
                     <View style={{ marginVertical: 5, marginRight: 10 }}>
-                       {(!(item.state === "已通过") &&<Button title="编辑" onPress={() => { router.push({ pathname: 'logPublic', params: { log: JSON.stringify(item) } }) }} />)}
+                      {(!(item.state === "已通过") && <Button title="编辑" onPress={() => { router.push({ pathname: 'logPublic', params: { log: JSON.stringify(item) } }) }} />)}
                     </View>
                     <View style={{ marginVertical: 5, marginRight: 10 }}>
                       <Button title="删除" onPress={() => handleDelete(item)} />
