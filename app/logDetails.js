@@ -1,5 +1,4 @@
 import { MaterialIcons } from "@expo/vector-icons";
-import { Video } from 'expo-av';
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -21,6 +20,7 @@ export default function Details() {
   const logId = log._id; //接口参数，用于调用接口获取游击详情
   const userAvatar = log.userAvatar; //用户头像
   const userName = log.username; //用户名称
+  const userId = log.userId
 
   const [travelLog, setTravelLog] = useState(null);
 
@@ -46,16 +46,6 @@ export default function Details() {
     const month = (date.getMonth() + 1).toString().padStart(2, "0");
     const day = date.getDate().toString().padStart(2, "0");
     return `${year}-${month}-${day}`;
-  };
-  const matchText = (text) => {
-    matches = text.match(/\S+市/g);
-    // 输出匹配到的结果
-    if (matches) {
-      console.log(matches[0]);
-      return matches[0];
-    } else {
-      return null;
-    }
   };
 
 
@@ -85,7 +75,7 @@ export default function Details() {
               style={{ marginLeft: 10 }}
             />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.userInfo} >
+          <TouchableOpacity style={styles.userInfo} onPress={() => router.push({ pathname: 'otherUserPage', params: { userId: JSON.stringify(userId) } })} >
             {/* 根据传过来的用户Id进行查找，跳到对应的id用户界面 */}
             <View style={styles.avatarContainer}>
               <Image source={{ uri: userAvatar }} style={styles.avatar} />

@@ -7,6 +7,8 @@ import {
   StyleSheet,
   TouchableWithoutFeedback,
   View,
+  Modal, 
+  Pressable
 } from "react-native";
 
 const screenWidth = Dimensions.get("window").width;
@@ -17,6 +19,9 @@ const MediaSlider = ({ imageUrls, videosUrl }) => {
   const [currentPage, setCurrentPage] = useState(0);
   const videoRef = useRef(null); // 视频引用
   const [shouldPlay, setShouldPlay] = useState(true); //视频播放控制
+  const [isPreviewVisible, setIsPreviewVisible] = useState(false); // 是否显示大图预览
+  const [previewImageUrl, setPreviewImageUrl] = useState(""); // 当前预览的图片 URL
+
 
   useEffect(() => {
     let maxRatio = 0;
@@ -91,11 +96,19 @@ const MediaSlider = ({ imageUrls, videosUrl }) => {
       );
     } else {
       return (
-        <Image
-          source={{ uri: item.url }}
-          style={{ width: screenWidth, height: containerHeight }}
-          resizeMode="contain"
-        />
+        <TouchableWithoutFeedback
+          onPress={() => {
+            setPreviewImageUrl(item.url);
+            setIsPreviewVisible(true);
+          }}
+        >
+          <Image
+            source={{ uri: item.url }}
+            style={{ width: screenWidth, height: containerHeight }}
+            resizeMode="contain"
+          />
+        </TouchableWithoutFeedback>
+
       );
     }
   };
@@ -141,6 +154,24 @@ const MediaSlider = ({ imageUrls, videosUrl }) => {
           ))}
         </View>
       )}
+      <Modal
+        visible={isPreviewVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setIsPreviewVisible(false)}
+      >
+        <Pressable
+          style={styles.modalBackground}
+          onPress={() => setIsPreviewVisible(false)}
+        >
+          <Image
+            source={{ uri: previewImageUrl }}
+            style={styles.fullImage}
+            resizeMode="contain"
+          />
+        </Pressable>
+      </Modal>
+
     </View>
   );
 };
@@ -172,6 +203,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginLeft: 5,
   },
+  modalBackground: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.9)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  fullImage: {
+    width: "100%",
+    height: "100%",
+  },
+
 });
 
 export default MediaSlider;

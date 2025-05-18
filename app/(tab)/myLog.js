@@ -15,6 +15,7 @@ import {
   View
 } from "react-native";
 import { api, getItemFromAS, removeValueFromAS } from "../../utiles/utile";
+import { useIsFocused } from "@react-navigation/native";
 
 export default function MyLog() {
   const [userInfo, setUserInfo] = useState({})
@@ -36,26 +37,26 @@ export default function MyLog() {
   };
 
   const handleEditAvatar = async () => {
-  try {
-    // 首先弹出确认对话框
-    Alert.alert(
-      "修改头像",
-      "确定要修改头像吗？",
-      [
-        {
-          text: "取消",
-          onPress: () => console.log("Cancel Pressed"),
-          style: "cancel",
-        },
-        { text: "确定", onPress: handleAvatarUpdate },
-      ],
-      { cancelable: false }
-    );
-  } catch (error) {
-    console.error("头像上传出错:", error);
-    Alert.alert("上传失败", "头像上传过程中出错，请稍后再试");
-  }
-};
+    try {
+      // 首先弹出确认对话框
+      Alert.alert(
+        "修改头像",
+        "确定要修改头像吗？",
+        [
+          {
+            text: "取消",
+            onPress: () => console.log("Cancel Pressed"),
+            style: "cancel",
+          },
+          { text: "确定", onPress: handleAvatarUpdate },
+        ],
+        { cancelable: false }
+      );
+    } catch (error) {
+      console.error("头像上传出错:", error);
+      Alert.alert("上传失败", "头像上传过程中出错，请稍后再试");
+    }
+  };
   const handleAvatarUpdate = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -74,7 +75,7 @@ export default function MyLog() {
         const formData = new FormData();
         formData.append('images', [base64Data, ext]);
 
-        const response = await api.post('/userInfo/updateUserAvatar', {images: formData});
+        const response = await api.post('/userInfo/updateUserAvatar', { images: formData });
 
         if (response.data.status === 'success') {
           const newAvatarUrl = response.data.data.url;
@@ -139,9 +140,8 @@ export default function MyLog() {
             api.interceptors.request.eject(
               "AddAuthorizationToken"
             );
-            router.push({ pathname: "login" });
+            router.replace({ pathname: "login" });
             setIsLogin(false)
-
           },
         },
       ],
@@ -190,11 +190,13 @@ export default function MyLog() {
       { cancelable: false }
     );
   }
-
+  const isFocused = useIsFocused();
   useEffect(() => {
-    getUserDataFromAS()
-    fetchUserLogData()
-  }, [])
+    if (isFocused) {
+      getUserDataFromAS()
+      fetchUserLogData()
+    }
+  }, [isFocused])
 
 
   return (

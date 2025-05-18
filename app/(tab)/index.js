@@ -1,9 +1,7 @@
-import { Link } from "expo-router";
 import { useState, useEffect } from "react";
 import WaterfallFlow from 'react-native-waterfall-flow';
 import TravelLogCard from "../../components/TravelLogCard";
 import { router } from "expo-router";
-// import { Dialog } from "@rneui/themed";
 import {
   View,
   Text,
@@ -92,7 +90,6 @@ export default function Index() {
   // 点击对应主题执行更新搜索的主题
   const handleTopicPress = (index) => {
     setSelectedTopic(topics[index]);
-    setTravelLogs([]);  // 立即清空列表，避免视觉闪烁
   };
 
   // 当滚动到顶部时刷新游记列表
@@ -131,9 +128,9 @@ export default function Index() {
       );
 
       // console.log(newTravelLogs);
-      type === "fresh"
-        ? setTravelLogs(newTravelLogs) // 刷新游记
-        : setTravelLogs([...travelLogs, ...newTravelLogs]); // 增量获取
+      (type === "append" && newTravelLogs.length >= countEachLoad)
+        ? setTravelLogs([...travelLogs, ...newTravelLogs]) // 增量获取
+        : setTravelLogs(newTravelLogs) // 刷新游记
       // 数据加载成功
       setRequestStatus(RequestStatus.SUCCESS);
     } catch (error) {
