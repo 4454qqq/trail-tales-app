@@ -1,20 +1,20 @@
-import { useState, useEffect } from "react";
+import { Feather, MaterialIcons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { useEffect, useState } from "react";
+import {
+  Dimensions,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  ToastAndroid,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import WaterfallFlow from 'react-native-waterfall-flow';
 import TravelLogCard from "../../components/TravelLogCard";
-import { router } from "expo-router";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-  Dimensions,
-  ToastAndroid,
-} from "react-native";
 import { api } from "../../utiles/utile";
-import { Feather, MaterialIcons } from "@expo/vector-icons";
 const config = require("../../config.json")
 // 屏幕宽度高度
 const screenWidth = Dimensions.get("window").width;
@@ -58,7 +58,7 @@ export default function Index() {
     let length = 0;
     for (let i = 0; i < str.length; i++) {
       // 检查是否是中文字符，如果是，则计数+2，否则+1
-      const charCode = str.charCodeAt(i);
+      const charCode = str.charCodeAt(i); //获取Unicode编码
       if (charCode >= 0x4e00 && charCode <= 0x9fff) {
         length += 1; // 中文字符
       } else {
@@ -108,7 +108,7 @@ export default function Index() {
         count: countEachLoad,
       };
       const response = await api.get("/home/travelLogs", { params });
-      // 使用 Promise.all() 来等待所有的 Image.getSize() 异步操作完成，然后返回一个新的数组 newTravelLogs。在 map() 函数中，使用 async/await 来等待每个 Image.getSize() 异步操作的完成，然后将结果存入新数组中
+      // 使用 Promise.all() 来等待所有的 Image.getSize() 异步操作完成，然后返回一个新的数组 newTravelLogs。
       const newTravelLogs = await Promise.all(
         response.data.map(async (item) => {
           return new Promise((resolve, reject) => {
@@ -128,7 +128,7 @@ export default function Index() {
       );
 
       // console.log(newTravelLogs);
-      (type === "append" && newTravelLogs.length >= countEachLoad)
+      (type === "append" )
         ? setTravelLogs([...travelLogs, ...newTravelLogs]) // 增量获取
         : setTravelLogs(newTravelLogs) // 刷新游记
       // 数据加载成功
@@ -209,7 +209,9 @@ export default function Index() {
               onRefresh={handleFresh}
               refreshing={requestStatus === RequestStatus.PENDING}
               onEndReached={() => {
-                fetchTravelLog("append");
+                if (travelLogs.length >= countEachLoad) {
+                  fetchTravelLog("append");
+                }
               }}
               onEndReachedThreshold={0.1}
               renderItem={({ item, index, columnIndex }) => (

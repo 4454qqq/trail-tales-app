@@ -182,7 +182,7 @@ export default function MyLog() {
                                 console.log(res.data);
                                 ToastAndroid.show("删除成功", ToastAndroid.SHORT);
                             });
-                            fetchMyLogData();
+                            fetchUserLogData();
                         } catch (error) {
                             console.error("Error deleting data:", error);
                             ToastAndroid.show("删除失败", ToastAndroid.SHORT);

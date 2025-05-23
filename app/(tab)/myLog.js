@@ -87,8 +87,13 @@ export default function MyLog() {
         }
       }
     } catch (error) {
-      console.error("头像上传出错:", error);
-      Alert.alert("上传失败", "头像上传过程中出错，请稍后再试");
+      if (error.response.status === 401) {
+        // console.error("请不要上传重复头像！");
+        Alert.alert("上传失败", "请不要上传重复头像！");
+      } else {
+        // console.error("头像上传出错:", error);
+        Alert.alert("上传失败", "头像上传过程中出错，请稍后再试");
+      }
     }
   };
 
@@ -221,25 +226,41 @@ export default function MyLog() {
               }}>
                 <View style={{
                   flex: 2,
-                  alignItems: "left",
+                  alignItems: "flex-start",
                   justifyContent: "center",
                   marginVertical: 20,
                   marginLeft: 10
                 }}>
-                  <Image style={{ height: 80, width: 80, borderRadius: 40, }} source={{ uri: userInfo.userAvatar }} />
-                  <TouchableOpacity
-                    style={{
-                      position: 'absolute',
-                      bottom: -10,
-                      right: 0,
-                      backgroundColor: '#ffffff',
-                      borderRadius: 12,
-                      padding: 4,
-                    }}
-                    onPress={handleEditAvatar}
-                  >
-                    <MaterialIcons name="edit" size={18} color="#3498DB" />
-                  </TouchableOpacity>
+                  {/* 头像容器增加相对定位和 padding 为按钮留空间 */}
+                  <View style={{
+                    position: 'relative',
+                    marginVertical: 30,
+                    paddingBottom: 20,
+                    paddingRight: 20
+                  }}>
+                    <Image
+                      style={{
+                        height: 80,
+                        width: 80,
+                        borderRadius: 40
+                      }}
+                      source={{ uri: userInfo.userAvatar }}
+                    />
+                    <TouchableOpacity
+                      style={{
+                        marginTop: -24,
+                        alignSelf: 'flex-end',
+                        backgroundColor: '#ffffff',
+                        borderRadius: 12,
+                        padding: 4,
+                        borderWidth: 1,
+                        borderColor: '#f0f0f0',
+                      }}
+                      onPress={handleEditAvatar}
+                    >
+                      <MaterialIcons name="edit" size={18} color="#3498DB" />
+                    </TouchableOpacity>
+                  </View>
                 </View>
 
                 <View

@@ -46,6 +46,10 @@ export default function PublishLog() {
   const [openDestination, setOpenDestination] = useState(false);
   const [openMonth, setOpenMonth] = useState(false);
 
+  // 文件大小限制（字节）
+  const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 限制图片最大为5MB
+  const MAX_VIDEO_SIZE = 10 * 1024 * 1024; // 限制视频最大为10MB
+
   // 计算输入的字符长度
   const calculateLength = (str) => {
     let length = 0;
@@ -80,20 +84,31 @@ export default function PublishLog() {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       quality: 0.5,
+      allowsMultipleSelection: true
     });
 
     if (image.canceled) return;
-    const url = image.assets[0].uri;
-    const suffix = url.substring(url.lastIndexOf(".") + 1);
+
+    const asset = image.assets[0];
+    const uri = asset.uri;
+    const suffix = uri.substring(uri.lastIndexOf(".") + 1); // 图片后缀名
+
+    // 检查图片大小
+    const fileInfo = await FileSystem.getInfoAsync(uri);
+    if (fileInfo.size > MAX_IMAGE_SIZE) {
+      ToastAndroid.show(`图片大小不能超过${MAX_IMAGE_SIZE / (1024 * 1024)}MB`, ToastAndroid.SHORT);
+      return;
+    }
+
     try {
-      const data = await FileSystem.readAsStringAsync(url, {
+      const data = await FileSystem.readAsStringAsync(uri, {
         encoding: FileSystem.EncodingType.Base64,
       });
       setImageData([...imageData, [data, suffix]]);
+      setImageUrl([...imageUrl, uri]);
     } catch (error) {
       console.log("Error reading image file:", error);
     }
-    setImageUrl([...imageUrl, url]);
   };
 
   // 处理视频添加
@@ -113,6 +128,15 @@ export default function PublishLog() {
     const asset = result.assets[0];
     const uri = asset.uri;
     const suffix = uri.substring(uri.lastIndexOf(".") + 1).toLowerCase();
+
+    // 检查视频大小
+    const fileInfo = await FileSystem.getInfoAsync(uri);
+    console.log(fileInfo.size);
+    
+    if (fileInfo.size > MAX_VIDEO_SIZE) {
+      ToastAndroid.show(`视频大小不能超过${MAX_VIDEO_SIZE / (1024 * 1024)}MB`, ToastAndroid.SHORT);
+      return;
+    }
 
     try {
       const base64 = await FileSystem.readAsStringAsync(uri, {
@@ -175,11 +199,11 @@ export default function PublishLog() {
       })
       .then((res) => {
         clearData();
-        ToastAndroid.show("提交成功", ToastAndroid.SHORT);
+        ToastAndroid.show("发布成功", ToastAndroid.SHORT);
         router.push("myLog");
       })
       .catch((err) => {
-        console.log("提交失败:", err);
+        console.log("发布失败:", err);
       });
   };
 
@@ -200,7 +224,7 @@ export default function PublishLog() {
       const response = await api.get(`/logDetail/findLog/${logId}`);
       const data = await response.data;
       setImageUrl(data.imagesUrl);
-      setVideoUrl(data.videosUrl)
+      setVideoUrl(data.videosUrl);
       setContent(data.content);
       setTitle(data.title);
       setSelectedMonth(data.travelMonth);
